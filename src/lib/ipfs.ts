@@ -136,12 +136,15 @@ export async function uploadToIPFS(
 }
 
 // IPFS download with decryption, read straight from the public gateway — no
-// credential needed for reads.
+// credential needed for reads. Validates hash before fetch.
 export async function downloadFromIPFS(
   hash: string,
   encrypted: boolean = false,
   password?: string
 ): Promise<{ content: Uint8Array; decrypted: boolean }> {
+  if (!validateIPFSHash(hash)) {
+    throw new Error(`Invalid IPFS hash format: ${hash}`)
+  }
   const res = await fetch(`${IPFS_GATEWAY}${hash}`)
   if (!res.ok) {
     throw new Error(`Failed to fetch document from IPFS gateway (${res.status})`)
@@ -163,16 +166,26 @@ export async function downloadFromIPFS(
   }
 }
 
-// Get IPFS URL for direct access
+// Get IPFS URL for direct access. Validates hash before building URL.
 export function getIPFSUrl(hash: string): string {
+  if (!validateIPFSHash(hash)) {
+    throw new Error(`Invalid IPFS hash format: ${hash}`)
+  }
   return `${IPFS_GATEWAY}${hash}`
 }
 
-// Validate IPFS hash
+// Validate IPFS hash format (CIDv0 and CIDv1).
+// Accepts: CIDv0 (Qm..., 46 chars), CIDv1 with multibase b/f/z (variable length).
+// Does NOT validate multihash structure — this is a shape check only.
 export function validateIPFSHash(hash: string): boolean {
-  // Basic validation for IPFS CID v0 and v1
+  // CIDv0: base58btc encoded, always 46 characters (Qm + 44 base58 chars)
   const cidV0Regex = /^Qm[1-9A-HJ-NP-Za-km-z]{44}$/
-  const cidV1Regex = /^b[a-z2-7]{58}$/
+  // CIDv1: multibase prefix + base-encoded CID. Support common prefixes:
+  // - b: base32 (most common, ~59 chars for sha2-256)
+  // - f: base16 (hex, longer)
+  // - z: base58btc (legacy v0-like encoding)
+  // Length varies with multihash algorithm; accept 7-80 chars after prefix.
+  const cidV1Regex = /^[bfz][a-zA-Z0-9]{7,80}$/
   return cidV0Regex.test(hash) || cidV1Regex.test(hash)
 }
 

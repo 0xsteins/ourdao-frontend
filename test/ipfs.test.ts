@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { vi } from 'vitest'
-import { downloadFromIPFS, getIPFSUrl, uploadToIPFS, encryptData, decryptData } from '@/lib/ipfs'
+import { downloadFromIPFS, getIPFSUrl, uploadToIPFS, encryptData, decryptData, validateIPFSHash } from '@/lib/ipfs'
 
 function jsonResponse(body: unknown, ok = true, status = ok ? 200 : 500) {
   return { ok, status, json: () => Promise.resolve(body), text: () => Promise.resolve('') } as Response
@@ -111,7 +111,59 @@ describe('downloadFromIPFS', () => {
 })
 
 describe('getIPFSUrl', () => {
-  it('builds a URL against the configured gateway', () => {
-    expect(getIPFSUrl('QmSomeHash')).toContain('QmSomeHash')
+  it('builds a URL against the configured gateway for valid CIDv0', () => {
+    expect(getIPFSUrl('QmSomeHash1234567890abcdefghijklmnopqrstuvwxy')).toContain('QmSomeHash')
+  })
+
+  it('throws on invalid hash format', () => {
+    expect(() => getIPFSUrl('invalid-hash')).toThrow(/Invalid IPFS hash format/)
+  })
+})
+
+describe('validateIPFSHash', () => {
+  it('accepts CIDv0 (46 chars: Qm + 44 base58)', () => {
+    expect(validateIPFSHash('QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG')).toBe(true)
+  })
+
+  it('accepts CIDv1 base32 (bafybei...)', () => {
+    expect(validateIPFSHash('bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi')).toBe(true)
+  })
+
+  it('accepts CIDv1 raw base32 (bafkrei...)', () => {
+    expect(validateIPFSHash('bafkreigh2akiscaildcqabsyg3dfr6chu3fgpregiymsck7e7aqa4s52zy')).toBe(true)
+  })
+
+  it('accepts CIDv1 base16 (f-prefixed)', () => {
+    expect(validateIPFSHash('f01550120f8b9b59d2e24a7aded8d05e70b5c81e7cc79b2a3c6d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9')).toBe(true)
+  })
+
+  it('accepts CIDv1 base58btc (z-prefixed)', () => {
+    expect(validateIPFSHash('zb2rhY7fR7Uk1DJHwGbgXYddPcHHg5AJvj1qJyGJLXYMyHy')).toBe(true)
+  })
+
+  it('rejects invalid format (no multibase prefix)', () => {
+    expect(validateIPFSHash('invalid-hash-string')).toBe(false)
+  })
+
+  it('rejects too short hash (not enough chars after prefix)', () => {
+    expect(validateIPFSHash('bshort')).toBe(false)
+  })
+
+  it('rejects malformed CIDv0 (wrong length)', () => {
+    expect(validateIPFSHash('QmShortHash')).toBe(false)
+  })
+})
+
+describe('downloadFromIPFS validation', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn())
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('throws on invalid hash before making fetch request', async () => {
+    await expect(downloadFromIPFS('../../etc/passwd', false)).rejects.toThrow(/Invalid IPFS hash format/)
+    expect(fetch).not.toHaveBeenCalled()
   })
 })

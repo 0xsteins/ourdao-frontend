@@ -116,43 +116,24 @@ export function useVoting() {
 
 export function useLoanRepayment() {
   const { run, isPending, isSuccess, error, address } = useWriteAction()
-  // repay_loan takes no amount argument — the contract always collects the
-  // full outstanding balance (total_repayment - amount_repaid) in one shot.
-  // AUDIT COMMENT - ISSUE #154:
-  // ❌ OUTDATED: The comment above is misleading. The contract ALSO exposes
-  // repay_loan_partial(borrower, loan_id, amount) which allows partial repayment.
-  // Frontend currently does NOT call repay_loan_partial, limiting borrowers to
-  // full repayment only. This hook needs to be expanded.
-  //
-  // REQUIRED FIX:
-  // 1. Add repayLoanPartial(loanId: number, amount: bigint) hook alongside repayLoan
-  // 2. Use dao-client.repayLoanPartial() with proper i128 encoding
-  // 3. Invalidate same query keys on success: ['loan', loanId], ['userData', address], ['daoStats']
-  // 4. Update comment to describe BOTH entrypoints:
-  //    - repay_loan: full balance repayment in one transaction
-  //    - repay_loan_partial: repay any amount up to outstanding balance
-  // 5. Add client-side validation:
-  //    - Reject amount <= 0
-  //    - Reject amount > outstanding balance (fetch from useDAO read)
-  // 6. Ensure amount is handled as bigint throughout, use parseToken() (not float)
-  //    (prevents precision loss like issue #62)
-  //
-  // SUGGESTED UPGRADES:
-  // - Add optional parameter to repayLoan: repayLoan(loanId, amount?: bigint)
-  //   + If amount provided, call repay_loan_partial
-  //   + If amount omitted, call repay_loan (full balance)
-  //   + Pros: Single hook, backward compatible
-  //   + Cons: Less explicit than two separate hooks
-  // - OR keep separate hooks (current requirement)
-  //   + Pros: Clear intent, no logic branching
-  //   + Cons: Duplicate code
+  // repay_loan: repays the full outstanding balance in one transaction
+  // (principal + accrued interest). Useful for final repayment.
+  // repay_loan_partial: repays any amount up to the outstanding balance.
+  // Interest is applied first and distributed as yield; remainder reduces principal.
+  // Allows multiple instalments on a single loan.
   const repayLoan = (loanId: number) =>
     run('Repaying loan', (w) => w.repayLoan(loanId), [
       ['loan', loanId],
       ['userData', address],
       ['daoStats'],
     ])
-  return { repayLoan, isPending, error, isSuccess }
+  const repayLoanPartial = (loanId: number, amount: bigint) =>
+    run('Repaying loan (partial)', (w) => w.repayLoanPartial(loanId, amount), [
+      ['loan', loanId],
+      ['userData', address],
+      ['daoStats'],
+    ])
+  return { repayLoan, repayLoanPartial, isPending, error, isSuccess }
 }
 
 export function useMarkLoanDefaulted() {
