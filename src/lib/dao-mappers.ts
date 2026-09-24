@@ -5,6 +5,7 @@
 import type { BackendEvent, BackendLoan } from '@/lib/backend'
 import type { Loan } from '@/types/dao'
 import { MemberStatus } from '@/types/dao'
+import { PROPOSAL_STATUS_AWAITING_FUNDS } from '@/constants'
 
 export const asBigInt = (v: unknown): bigint => {
   try {
@@ -53,6 +54,7 @@ export function loanStatusCode(raw: Record<string, unknown>): number {
   const status = tag(raw.status)
   const phase = tag(raw.phase)
   if (status === 'Approved') return 3
+  if (status === 'ApprovedPendingDisbursement') return PROPOSAL_STATUS_AWAITING_FUNDS
   if (status === 'Executed') return 5
   if (status === 'Rejected' || phase === 'Expired') return 4
   if (phase === 'Voting') return 2
@@ -160,7 +162,14 @@ export interface UITreasuryProposal {
  *  distinction the contract doesn't expose. */
 export function mapTreasuryProposal(raw: Record<string, unknown>, hasVoted = false): UITreasuryProposal {
   const status = tag(raw.status)
-  const code = status === 'Executed' ? 5 : status === 'Rejected' ? 4 : 2
+  const code =
+    status === 'Executed'
+      ? 5
+      : status === 'Rejected'
+        ? 4
+        : status === 'ApprovedPendingDisbursement'
+          ? PROPOSAL_STATUS_AWAITING_FUNDS
+          : 2
   const reason = String(raw.reason ?? '')
   return {
     id: Number(raw.id ?? 0),
@@ -191,10 +200,14 @@ const EVENT_LABELS: Record<string, string> = {
   loan_appr: 'Loan approved',
   loan_rpy: 'Loan repayment',
   loan_dflt: 'Loan defaulted',
+  loan_rej: 'Loan proposal rejected',
+  loan_wait: 'Loan approved, awaiting treasury funds',
   interest: 'Interest distributed',
   tre_prop: 'Treasury withdrawal proposed',
   tre_vote: 'Treasury vote cast',
   tre_exec: 'Treasury withdrawal executed',
+  tre_rej: 'Treasury withdrawal rejected',
+  tre_wait: 'Treasury withdrawal approved, awaiting funds',
   staked: 'Member staked',
   unstaked: 'Member unstaked',
   name_reg: 'Name registered',
