@@ -149,17 +149,17 @@ describe('invoke()', () => {
     mockSendTransaction.mockResolvedValue({ status: 'PENDING', hash: 'hash-fee-test' })
     mockGetTransaction.mockResolvedValue({ status: 'SUCCESS', returnValue: undefined })
 
-    // Capture the transaction passed to prepareTransaction
-    let capturedTx: any = null
+    // Capture the fee on the transaction passed to prepareTransaction
+    let capturedFee: string | undefined
     mockPrepareTransaction.mockImplementation(async (tx) => {
-      capturedTx = tx
+      capturedFee = tx.fee
       return tx
     })
 
     await invoke(WALLET, signXDR, 'register_member')
 
     // BASE_FEE is 100 stroops; multiplier is 1.5, so fee should be 150.
-    // Using Math.ceil to ensure integer stroops.
-    expect(capturedTx.fee).toBe(150)
+    // Transaction.fee is a string of stroops.
+    expect(capturedFee).toBe('150')
   })
 })

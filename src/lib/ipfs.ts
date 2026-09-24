@@ -78,7 +78,6 @@ export async function decryptData(encryptedData: string, password: string): Prom
 
   // Extract components: [version:1][iterations:4][salt:16][iv:12][ciphertext:...]
   // Supports both old (no version) and new (versioned) formats for backward compatibility.
-  let version = 0
   let iterations = 100000 // Old documents used 100k iterations
   let saltStart = 0
   let ivStart = 16
@@ -86,7 +85,6 @@ export async function decryptData(encryptedData: string, password: string): Prom
 
   // Check if this is a new versioned document (has version byte)
   if (combined.length > 33 && combined[0] <= 1) {
-    version = combined[0]
     const iterationsBuffer = new DataView(combined.buffer, combined.byteOffset + 1, 4)
     iterations = iterationsBuffer.getUint32(0, true)
     saltStart = 5

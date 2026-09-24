@@ -47,7 +47,6 @@ describe('encryptData / decryptData', () => {
     // Format: [salt:16][iv:12][ciphertext:...]
     const plaintext = 'old document'
     const encoder = new TextEncoder()
-    const decoder = new TextDecoder()
 
     // Manually encrypt with old parameters to create a legacy ciphertext
     const salt = crypto.getRandomValues(new Uint8Array(16))

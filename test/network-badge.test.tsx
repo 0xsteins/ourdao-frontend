@@ -1,8 +1,7 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen } from '@testing-library/react'
 import { renderWithProviders } from './test-utils'
 import { NetworkBadge } from '@/components/NetworkBadge'
-import { Networks } from '@stellar/stellar-sdk'
 
 const mockUseWallet = vi.fn()
 
@@ -21,8 +20,10 @@ describe('NetworkBadge', () => {
       isConnected: false,
     })
 
+    // ThemeProvider injects its own <script>, so assert on the badge span
+    // rather than on the container being empty.
     const { container } = renderWithProviders(<NetworkBadge />)
-    expect(container.firstChild).toBeNull()
+    expect(container.querySelector('span')).toBeNull()
   })
 
   it('does not render when wallet is connected but network is unknown', () => {
@@ -32,7 +33,7 @@ describe('NetworkBadge', () => {
     })
 
     const { container } = renderWithProviders(<NetworkBadge />)
-    expect(container.firstChild).toBeNull()
+    expect(container.querySelector('span')).toBeNull()
   })
 
   it('renders Mainnet label for PUBLIC network', () => {
@@ -55,7 +56,7 @@ describe('NetworkBadge', () => {
     const badge = screen.getByText('Testnet')
     expect(badge).toBeInTheDocument()
     // Testnet has yellow styling for visual distinction
-    expect(badge.parentElement).toHaveClass('bg-yellow-100')
+    expect(badge).toHaveClass('bg-yellow-100')
   })
 
   it('renders Futurenet label with visual prominence for FUTURENET network', () => {
@@ -68,7 +69,7 @@ describe('NetworkBadge', () => {
     const badge = screen.getByText('Futurenet')
     expect(badge).toBeInTheDocument()
     // Futurenet has purple styling for visual distinction
-    expect(badge.parentElement).toHaveClass('bg-purple-100')
+    expect(badge).toHaveClass('bg-purple-100')
   })
 
   it('renders unknown network name as-is when not in predefined config', () => {

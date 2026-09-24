@@ -101,7 +101,7 @@ export interface BackendEvent {
 async function get<T>(path: string, fallback: T): Promise<T> {
   if (!isBackendConfigured()) return fallback
   try {
-    const res = await fetch(`${BACKEND_URL}${path}`, {
+    const res = await fetch(`${backendUrl()}${path}`, {
       headers: { accept: 'application/json' },
       // Indexed data changes often; never serve a stale cache.
       cache: 'no-store',
@@ -118,7 +118,7 @@ async function get<T>(path: string, fallback: T): Promise<T> {
 async function patch(path: string): Promise<boolean> {
   if (!isBackendConfigured()) return false
   try {
-    const res = await fetch(`${BACKEND_URL}${path}`, { method: 'PATCH' })
+    const res = await fetch(`${backendUrl()}${path}`, { method: 'PATCH' })
     return res.ok
   } catch {
     return false
