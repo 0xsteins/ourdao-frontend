@@ -36,9 +36,6 @@ import { formatContractError } from './contract-errors'
 // Note: This is distinct from Soroban's resource fee, which prepareTransaction
 // computes separately and adds on top of this inclusion fee.
 const INCLUSION_FEE_MULTIPLIER = 1.5
-// TransactionBuilder takes the fee as a string of stroops, and BASE_FEE is
-// itself a string, so it must be coerced before the multiplication.
-const INCLUSION_FEE = String(Math.ceil(Number(BASE_FEE) * INCLUSION_FEE_MULTIPLIER))
 
 // ---------------------------------------------------------------------------
 // ScVal argument builders (JS value -> Soroban value with the right type)
@@ -130,7 +127,7 @@ export async function read<T = unknown>(
   // simulation results (the SDK's simulateTransaction doesn't authenticate sources).
   const source = new Account(Keypair.random().publicKey(), '0')
   const tx = new TransactionBuilder(source, {
-    fee: INCLUSION_FEE,
+    fee: Math.ceil(BASE_FEE * INCLUSION_FEE_MULTIPLIER),
     networkPassphrase: NETWORK_PASSPHRASE,
   })
     .addOperation(contract.call(method, ...args))
@@ -192,7 +189,7 @@ export async function invoke(
   const contract = new Contract(CONTRACT_ID)
   const account = await server.getAccount(walletAddress)
   const built = new TransactionBuilder(account, {
-    fee: INCLUSION_FEE,
+    fee: Math.ceil(BASE_FEE * INCLUSION_FEE_MULTIPLIER),
     networkPassphrase: NETWORK_PASSPHRASE,
   })
     .addOperation(contract.call(method, ...args))
