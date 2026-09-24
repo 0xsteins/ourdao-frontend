@@ -154,7 +154,7 @@ describe('downloadFromIPFS', () => {
 
     const result = await downloadFromIPFS('QmSomeHash', false)
 
-    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('QmSomeHash'))
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('QmSomeHash'), expect.objectContaining({ signal: expect.any(AbortSignal) }))
     expect(new TextDecoder().decode(result.content)).toBe('plain content')
     expect(result.decrypted).toBe(false)
   })
