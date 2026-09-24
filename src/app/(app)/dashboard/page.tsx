@@ -162,7 +162,7 @@ export default function DashboardPage() {
       href: '/privacy',
       color: 'text-yellow-600 dark:text-yellow-400',
     },
-    ...(userData.member?.status === 3 ? [{
+    ...(userData.isAdmin ? [{
       title: 'Admin Panel',
       description: 'Manage DAO operations and configuration',
       icon: ShieldCheckIcon,

@@ -11,9 +11,13 @@
  * rather than throwing.
  */
 
-export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ''
+// Read at call time, like isBackendConfigured(), so the two can never disagree
+// about whether (or where) a backend is configured.
+const backendUrl = (): string => process.env.NEXT_PUBLIC_BACKEND_URL || ''
 
-export const isBackendConfigured = (): boolean => !!process.env.NEXT_PUBLIC_BACKEND_URL
+export const BACKEND_URL = backendUrl()
+
+export const isBackendConfigured = (): boolean => !!backendUrl()
 
 // --- Response shapes (mirror ourdao-backend/src/types.ts; amounts are strings) ---
 
@@ -97,7 +101,7 @@ export interface BackendEvent {
 async function get<T>(path: string, fallback: T): Promise<T> {
   if (!isBackendConfigured()) return fallback
   try {
-    const res = await fetch(`${BACKEND_URL}${path}`, {
+    const res = await fetch(`${backendUrl()}${path}`, {
       headers: { accept: 'application/json' },
       // Indexed data changes often; never serve a stale cache.
       cache: 'no-store',
@@ -114,7 +118,7 @@ async function get<T>(path: string, fallback: T): Promise<T> {
 async function patch(path: string): Promise<boolean> {
   if (!isBackendConfigured()) return false
   try {
-    const res = await fetch(`${BACKEND_URL}${path}`, { method: 'PATCH' })
+    const res = await fetch(`${backendUrl()}${path}`, { method: 'PATCH' })
     return res.ok
   } catch {
     return false

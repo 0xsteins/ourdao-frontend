@@ -1,7 +1,6 @@
 'use client'
 
 import { useWallet } from '@/lib/wallet'
-<<<<<<< HEAD
 
 // Keyed by the network name Freighter reports (`walletNetwork`), not the
 // passphrase.
@@ -9,16 +8,6 @@ const networkConfig: Record<string, { label: string; className: string }> = {
   PUBLIC: { label: 'Mainnet', className: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300' },
   TESTNET: { label: 'Testnet', className: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' },
   FUTURENET: { label: 'Futurenet', className: 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200' },
-=======
-import { Networks } from '@stellar/stellar-sdk'
-import { NETWORK_PASSPHRASE } from '@/lib/stellar'
-
-// Map network passphrases to display labels and CSS classes
-const networkConfig: Record<string, { label: string; className: string }> = {
-  [Networks.PUBLIC]: { label: 'Mainnet', className: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300' },
-  [Networks.TESTNET]: { label: 'Testnet', className: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' },
-  [Networks.FUTURENET]: { label: 'Futurenet', className: 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200' },
->>>>>>> 15f530f (feat: add NetworkBadge component and integrate into AppShell; enhance backend URL configuration and update encryption methods for improved security (#165))
 }
 
 export function NetworkBadge() {

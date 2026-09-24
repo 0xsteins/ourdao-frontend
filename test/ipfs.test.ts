@@ -40,10 +40,6 @@ describe('encryptData / decryptData', () => {
     // Format: [salt:16][iv:12][ciphertext:...]
     const plaintext = 'old document'
     const encoder = new TextEncoder()
-<<<<<<< HEAD
-=======
-    const decoder = new TextDecoder()
->>>>>>> 15f530f (feat: add NetworkBadge component and integrate into AppShell; enhance backend URL configuration and update encryption methods for improved security (#165))
 
     // Manually encrypt with old parameters to create a legacy ciphertext
     const salt = crypto.getRandomValues(new Uint8Array(16))
