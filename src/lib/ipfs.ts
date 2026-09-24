@@ -70,9 +70,11 @@ export async function decryptData(encryptedData: string, password: string): Prom
   const decoder = new TextDecoder()
 
   // Decode base64
-  const combined = new Uint8Array(
-    atob(encryptedData).split('').map(char => char.charCodeAt(0))
-  )
+  const decoded = atob(encryptedData)
+  const combined = new Uint8Array(decoded.length)
+  for (let i = 0; i < decoded.length; i++) {
+    combined[i] = decoded.charCodeAt(i)
+  }
 
   // Extract components: [version:1][iterations:4][salt:16][iv:12][ciphertext:...]
   // Supports both old (no version) and new (versioned) formats for backward compatibility.
@@ -236,9 +238,15 @@ export function getIPFSUrl(hash: string): string {
 
 // Validate IPFS hash
 export function validateIPFSHash(hash: string): boolean {
-  // Basic validation for IPFS CID v0 and v1
+  // Shape check only — validates format but not cryptographic integrity.
+  // CIDv0: Qm followed by 44 base58btc chars (46 total)
   const cidV0Regex = /^Qm[1-9A-HJ-NP-Za-km-z]{44}$/
-  const cidV1Regex = /^b[a-z2-7]{58}$/
+
+  // CIDv1: multibase prefix + variable-length hash
+  // Supports common prefixes: b (base32), B (base32upper), f (base16), z (base58btc)
+  // Accepts 7-60 chars after prefix to cover common multihash lengths
+  const cidV1Regex = /^[bBfz][0-9A-Za-z]{7,60}$/
+
   return cidV0Regex.test(hash) || cidV1Regex.test(hash)
 }
 
@@ -396,8 +404,8 @@ export function filterDocuments(
     if (filter.tags && !filter.tags.some(tag => doc.tags?.includes(tag))) return false
     if (filter.dateFrom && doc.uploadedAt < filter.dateFrom) return false
     if (filter.dateTo && doc.uploadedAt > filter.dateTo) return false
-    if (filter.sizeMin && doc.size < filter.sizeMin) return false
-    if (filter.sizeMax && doc.size > filter.sizeMax) return false
+    if (filter.sizeMin !== undefined && doc.size < filter.sizeMin) return false
+    if (filter.sizeMax !== undefined && doc.size > filter.sizeMax) return false
     return true
   })
 }

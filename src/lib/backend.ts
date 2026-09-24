@@ -96,9 +96,8 @@ export interface BackendEvent {
 
 async function get<T>(path: string, fallback: T): Promise<T> {
   if (!isBackendConfigured()) return fallback
-  const base = process.env.NEXT_PUBLIC_BACKEND_URL || ''
   try {
-    const res = await fetch(`${base}${path}`, {
+    const res = await fetch(`${BACKEND_URL}${path}`, {
       headers: { accept: 'application/json' },
       // Indexed data changes often; never serve a stale cache.
       cache: 'no-store',
@@ -114,9 +113,8 @@ async function get<T>(path: string, fallback: T): Promise<T> {
 /** PATCH with no body. Returns whether the backend accepted the mutation. */
 async function patch(path: string): Promise<boolean> {
   if (!isBackendConfigured()) return false
-  const base = process.env.NEXT_PUBLIC_BACKEND_URL || ''
   try {
-    const res = await fetch(`${base}${path}`, { method: 'PATCH' })
+    const res = await fetch(`${BACKEND_URL}${path}`, { method: 'PATCH' })
     return res.ok
   } catch {
     return false
