@@ -11,6 +11,7 @@ import {
   eventLabel,
 } from '@/lib/dao-mappers'
 import { MemberStatus } from '@/types/dao'
+import { PROPOSAL_STATUS_LABELS } from '@/constants'
 import type { BackendLoan } from '@/lib/backend'
 
 describe('toLoan', () => {
@@ -140,6 +141,19 @@ describe('loanStatusCode', () => {
   })
 })
 
+describe('awaiting-funds status (ApprovedPendingDisbursement)', () => {
+  it('maps a loan stranded by a short treasury to its own code, not an in-progress one', () => {
+    expect(loanStatusCode({ status: 'ApprovedPendingDisbursement', phase: 'Voting' })).toBe(7)
+    expect(loanStatusCode({ status: ['ApprovedPendingDisbursement'], phase: 'Expired' })).toBe(7)
+  })
+  it('maps a treasury proposal stranded by a short treasury to the same code', () => {
+    expect(mapTreasuryProposal({ id: 1, status: 'ApprovedPendingDisbursement' }).status).toBe(7)
+  })
+  it('has a distinct human label', () => {
+    expect(PROPOSAL_STATUS_LABELS[7]).toBe('Awaiting Funds')
+  })
+})
+
 describe('mapLoanProposal', () => {
   it('derives votingStartTime/votingEndTime from editing_period_end + a fixed 7-day window', () => {
     const raw = {
@@ -231,6 +245,14 @@ describe('eventLabel', () => {
   it('maps a known symbol to its human-readable label', () => {
     expect(eventLabel('loan_dflt')).toBe('Loan defaulted')
     expect(eventLabel('loan_appr')).toBe('Loan approved')
+  })
+  it.each([
+    ['loan_rej', 'Loan proposal rejected'],
+    ['loan_wait', 'Loan approved, awaiting treasury funds'],
+    ['tre_rej', 'Treasury withdrawal rejected'],
+    ['tre_wait', 'Treasury withdrawal approved, awaiting funds'],
+  ])('labels the failure event %s', (symbol, label) => {
+    expect(eventLabel(symbol)).toBe(label)
   })
   it('falls back to the raw symbol for an unrecognized one', () => {
     expect(eventLabel('some_new_symbol')).toBe('some_new_symbol')

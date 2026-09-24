@@ -27,7 +27,7 @@ import {
   type UITreasuryProposal,
 } from '@/hooks/useDAO'
 import { formatToken, formatAddress, parseToken } from '@/lib/utils'
-import { PROPOSAL_STATUS_LABELS } from '@/constants'
+import { PROPOSAL_STATUS_LABELS, PROPOSAL_STATUS_AWAITING_FUNDS } from '@/constants'
 
 function TreasuryProposalRow({
   proposal: p,
@@ -68,7 +68,9 @@ function TreasuryProposalRow({
                 ? 'default'
                 : p.status === 4
                   ? 'destructive'
-                  : 'secondary'
+                  : p.status === PROPOSAL_STATUS_AWAITING_FUNDS
+                    ? 'outline'
+                    : 'secondary'
             }
           >
             {PROPOSAL_STATUS_LABELS[p.status as keyof typeof PROPOSAL_STATUS_LABELS]}
