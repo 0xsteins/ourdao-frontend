@@ -28,6 +28,15 @@ import {
 } from './stellar'
 import { formatContractError } from './contract-errors'
 
+// Multiplier for inclusion fee to survive network congestion.
+// The inclusion fee (stroops/byte) is what validators use to order transactions
+// when the ledger is full. BASE_FEE (100 stroops) is the protocol floor, not a
+// recommended value. This multiplier ensures submissions carry headroom above the
+// floor, preventing silent drops when competing with higher-fee transactions.
+// Note: This is distinct from Soroban's resource fee, which prepareTransaction
+// computes separately and adds on top of this inclusion fee.
+const INCLUSION_FEE_MULTIPLIER = 1.5
+
 // ---------------------------------------------------------------------------
 // ScVal argument builders (JS value -> Soroban value with the right type)
 // ---------------------------------------------------------------------------
@@ -118,7 +127,7 @@ export async function read<T = unknown>(
   // simulation results (the SDK's simulateTransaction doesn't authenticate sources).
   const source = new Account(Keypair.random().publicKey(), '0')
   const tx = new TransactionBuilder(source, {
-    fee: BASE_FEE,
+    fee: Math.ceil(BASE_FEE * INCLUSION_FEE_MULTIPLIER),
     networkPassphrase: NETWORK_PASSPHRASE,
   })
     .addOperation(contract.call(method, ...args))
@@ -180,7 +189,7 @@ export async function invoke(
   const contract = new Contract(CONTRACT_ID)
   const account = await server.getAccount(walletAddress)
   const built = new TransactionBuilder(account, {
-    fee: BASE_FEE,
+    fee: Math.ceil(BASE_FEE * INCLUSION_FEE_MULTIPLIER),
     networkPassphrase: NETWORK_PASSPHRASE,
   })
     .addOperation(contract.call(method, ...args))

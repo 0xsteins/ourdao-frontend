@@ -144,4 +144,22 @@ describe('invoke()', () => {
     expect(result.hash).toBe('hash-eventually')
     expect(calls).toBe(3)
   })
+
+  it('builds the transaction with an inclusion fee multiplier to survive network congestion', async () => {
+    mockSendTransaction.mockResolvedValue({ status: 'PENDING', hash: 'hash-fee-test' })
+    mockGetTransaction.mockResolvedValue({ status: 'SUCCESS', returnValue: undefined })
+
+    // Capture the transaction passed to prepareTransaction
+    let capturedTx: any = null
+    mockPrepareTransaction.mockImplementation(async (tx) => {
+      capturedTx = tx
+      return tx
+    })
+
+    await invoke(WALLET, signXDR, 'register_member')
+
+    // BASE_FEE is 100 stroops; multiplier is 1.5, so fee should be 150.
+    // Using Math.ceil to ensure integer stroops.
+    expect(capturedTx.fee).toBe(150)
+  })
 })

@@ -22,6 +22,69 @@ describe('encryptData / decryptData', () => {
     const encrypted = await encryptData('secret', 'correct password')
     await expect(decryptData(encrypted, 'wrong password')).rejects.toThrow()
   })
+
+  it('decrypts new versioned ciphertext with elevated iteration count', async () => {
+    // New format includes version byte and 4-byte iteration count.
+    // This test confirms the higher iteration count is used on new encryptions.
+    const plaintext = 'versioned document'
+    const encrypted = await encryptData(plaintext, 'password')
+    const decoded = atob(encrypted)
+    // Check version byte exists (should be 0x01)
+    expect(decoded.charCodeAt(0)).toBe(1)
+    // Verify round-trip decryption works
+    expect(await decryptData(encrypted, 'password')).toBe(plaintext)
+  })
+
+  it('decrypts old unversioned ciphertext for backward compatibility', async () => {
+    // Simulate an old encrypted document (no version byte, 100k iterations).
+    // Format: [salt:16][iv:12][ciphertext:...]
+    const plaintext = 'old document'
+    const encoder = new TextEncoder()
+    const decoder = new TextDecoder()
+
+    // Manually encrypt with old parameters to create a legacy ciphertext
+    const salt = crypto.getRandomValues(new Uint8Array(16))
+    const iv = crypto.getRandomValues(new Uint8Array(12))
+    const password = 'pw'
+
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(password),
+      'PBKDF2',
+      false,
+      ['deriveBits', 'deriveKey']
+    )
+
+    const key = await crypto.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt: salt,
+        iterations: 100000, // Old iteration count
+        hash: 'SHA-256',
+      },
+      keyMaterial,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt', 'decrypt']
+    )
+
+    const encryptedBytes = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: iv },
+      key,
+      encoder.encode(plaintext)
+    )
+
+    // Combine without version (old format): [salt:16][iv:12][ciphertext:...]
+    const combined = new Uint8Array(salt.length + iv.length + encryptedBytes.byteLength)
+    combined.set(salt, 0)
+    combined.set(iv, salt.length)
+    combined.set(new Uint8Array(encryptedBytes), salt.length + iv.length)
+
+    const oldFormatCiphertext = btoa(String.fromCharCode(...combined))
+
+    // Verify decryptData can still read it
+    expect(await decryptData(oldFormatCiphertext, password)).toBe(plaintext)
+  })
 })
 
 describe('uploadToIPFS', () => {

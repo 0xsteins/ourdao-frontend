@@ -22,6 +22,7 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline'
 import { ConnectButton } from '@/components/ConnectButton'
+import { NetworkBadge } from '@/components/NetworkBadge'
 import NotificationCenter from '@/components/NotificationCenter'
 import { OrbitMark } from '@/components/OrbitMark'
 import { ThemeToggle } from '@/components/ThemeToggle'
@@ -130,6 +131,7 @@ export function AppShell({ children }: AppShellProps) {
           </SheetTrigger>
           <BrandMark />
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
+            <NetworkBadge />
             <ThemeToggle />
             <NotificationCenter />
             <ConnectButton />
