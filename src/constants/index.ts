@@ -24,6 +24,11 @@ export const PROPOSAL_STATUS_LABELS = {
   4: 'Rejected',
   5: 'Executed',
   6: 'Cancelled',
+  7: 'Awaiting Funds',
 } as const
+
+/** Approved by vote, but the treasury was too small to pay out; the contract
+ *  keeps the proposal as `ApprovedPendingDisbursement` until it is funded. */
+export const PROPOSAL_STATUS_AWAITING_FUNDS = 7
 
 export const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://gateway.pinata.cloud/ipfs/'
